@@ -1,8 +1,10 @@
 package com.example.highwayroadrage;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -11,6 +13,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class GameActivity extends AppCompatActivity {
 
@@ -20,9 +23,10 @@ public class GameActivity extends AppCompatActivity {
     private Button btnLeft;
     private Button btnRight;
 
-    private ImageView imgBarrier;
-    private ImageView imgHole;
-    private ArrayList<ImageView> obstacles = new ArrayList<>();
+    ArrayList<ArrayList<ImageView>> obstaclesList = new ArrayList<>();
+    private ArrayList<ImageView> leftColumnObstacles = new ArrayList<>();
+    private ArrayList<ImageView> middleColumnObstacles = new ArrayList<>();
+    private ArrayList<ImageView> rightColumnObstacles = new ArrayList<>();
 
     private ImageView imgHeart1;
     private ImageView imgHeart2;
@@ -43,13 +47,13 @@ public class GameActivity extends AppCompatActivity {
      */
     Runnable r = new Runnable() {
         public void run() {
-            //moveObstacles();
-            clockCounter++;
-            //checkCollision();
             handler.postDelayed(this, DELAY);
+            moveObstacles();
             if (clockCounter % 2 == 0) {
-                //generateObstacle();
+                generateObstacle();
             }
+            clockCounter++;
+            checkCollision();
         }
     };
 
@@ -77,7 +81,10 @@ public class GameActivity extends AppCompatActivity {
         hideStatusBar();
 
         findViews();
+        findObstaclesView();
         player = new Player(playerRow);
+        // Get instance of Vibrator from current Context
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         btnRight.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,13 +99,51 @@ public class GameActivity extends AppCompatActivity {
             public void onClick(View view) {
                 rotateWheel(-45);
                 moveLeft();
+                // Vibrate for 400 milliseconds
+                v.vibrate(400);
             }
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startTicker();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        stopTicker();
+    }
+
+    private void startTicker() {
+        handler.postDelayed(r, DELAY);
+    }
+
+    private void stopTicker() {
+        handler.removeCallbacks(r);
+    }
+
+    /**
+     * Set every obstacle visibility to false - invisible
+     */
+    private void setObstaclesInvisible() {
+        for (int i = 0; i < rightColumnObstacles.size(); i++) {
+            rightColumnObstacles.get(i).setVisibility(View.INVISIBLE);
+        }
+        for (int i = 0; i < middleColumnObstacles.size(); i++) {
+            middleColumnObstacles.get(i).setVisibility(View.INVISIBLE);
+        }
+        for (int i = 0; i < leftColumnObstacles.size(); i++) {
+            leftColumnObstacles.get(i).setVisibility(View.INVISIBLE);
+        }
     }
 
     /**
      * Change the rotation of the wheel image view
      * mentions the last call the user have done
+     *
      * @param degree
      */
     private void rotateWheel(int degree) {
@@ -140,22 +185,86 @@ public class GameActivity extends AppCompatActivity {
         playerRow.get(newPosition).setVisibility(View.VISIBLE);
     }
 
-/*
     private void generateObstacle() {
+        Random rand = new Random();
+        int columnNumber = rand.nextInt(3);
+        obstaclesList.get(columnNumber).get(0).setVisibility(View.VISIBLE);
     }
 
+    //TODO work it out , solve the bug
     private void moveObstacles() {
-    }
-
-    private void checkCollision() {
-        for (int i = 0; i<obstacles.size();i++){
-            if(player.getCurrentPosition() == obstacles[4][i].getCurrentPosition()){
-
+        int lastPosition;
+        for (ArrayList<ImageView> list : obstaclesList) {
+            for (ImageView v : list) {
+                if (v.getVisibility() == View.VISIBLE) {
+                    lastPosition = list.indexOf(v);
+                    switchObstaclePosition(lastPosition, obstaclesList.indexOf(list));
+                }
             }
         }
-
     }
-*/
+
+    //TODO work it out , solve the bug
+    private void switchObstaclePosition(int lastPosition, int columnNumber) {
+        if (lastPosition+1 < obstaclesList.get(0).size() ){
+            obstaclesList.get(columnNumber).get(lastPosition).setVisibility(View.INVISIBLE);
+            obstaclesList.get(columnNumber).get(lastPosition+1).setVisibility(View.VISIBLE);
+        }
+    }
+
+    //TODO make it shorter and add a toast and update heart function
+    private void checkCollision() {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (leftColumnObstacles.get(leftColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
+                playerRow.get(0).getVisibility() == View.VISIBLE) {
+            player.setLives(player.getLives() - 1);
+            // Vibrate for 400 milliseconds
+            // Get instance of Vibrator from current Context
+            v.vibrate(400);
+        }
+        if (middleColumnObstacles.get(middleColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
+                playerRow.get(1).getVisibility() == View.VISIBLE) {
+            player.setLives(player.getLives() - 1);
+            // Vibrate for 400 milliseconds
+            v.vibrate(400);
+        }
+        if (rightColumnObstacles.get(rightColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
+                playerRow.get(2).getVisibility() == View.VISIBLE) {
+            player.setLives(player.getLives() - 1);
+            // Vibrate for 400 milliseconds
+            v.vibrate(400);
+        }
+    }
+
+    /**
+     * the first digit of the panel image represent the row
+     * the second digit of the panel image represent the index inside the row
+     */
+    private void findObstaclesView() {
+        leftColumnObstacles.add(0, findViewById(R.id.panel_IMG_hole11));
+        leftColumnObstacles.add(1, findViewById(R.id.panel_IMG_hole21));
+        leftColumnObstacles.add(2, findViewById(R.id.panel_IMG_hole31));
+        leftColumnObstacles.add(3, findViewById(R.id.panel_IMG_hole41));
+        leftColumnObstacles.add(4, findViewById(R.id.panel_IMG_hole51));
+
+        middleColumnObstacles.add(0, findViewById(R.id.panel_IMG_barrier12));
+        middleColumnObstacles.add(1, findViewById(R.id.panel_IMG_barrier22));
+        middleColumnObstacles.add(2, findViewById(R.id.panel_IMG_barrier32));
+        middleColumnObstacles.add(3, findViewById(R.id.panel_IMG_barrier42));
+        middleColumnObstacles.add(4, findViewById(R.id.panel_IMG_barrier52));
+
+        rightColumnObstacles.add(0, findViewById(R.id.panel_IMG_hole13));
+        rightColumnObstacles.add(1, findViewById(R.id.panel_IMG_hole23));
+        rightColumnObstacles.add(2, findViewById(R.id.panel_IMG_hole33));
+        rightColumnObstacles.add(3, findViewById(R.id.panel_IMG_hole43));
+        rightColumnObstacles.add(4, findViewById(R.id.panel_IMG_hole53));
+
+        obstaclesList.add(0, leftColumnObstacles);
+        obstaclesList.add(1, middleColumnObstacles);
+        obstaclesList.add(2, rightColumnObstacles);
+
+        setObstaclesInvisible();
+    }
 
     @SuppressLint("WrongViewCast")
     private void findViews() {
@@ -163,15 +272,9 @@ public class GameActivity extends AppCompatActivity {
         btnLeft = findViewById(R.id.panel_BTN_left);
         wheel = findViewById(R.id.panel_IMG_wheel);
 
-        imgBarrier = findViewById(R.id.panel_IMG_barrier);
-        imgHole = findViewById(R.id.panel_IMG_hole);
-
         imgHeart1 = findViewById(R.id.panel_IMG_heart1);
         imgHeart2 = findViewById(R.id.panel_IMG_heart1);
         imgHeart3 = findViewById(R.id.panel_IMG_heart1);
-
-        obstacles.add(imgBarrier);
-        obstacles.add(imgHole);
 
         hearts.add(imgHeart1);
         hearts.add(imgHeart2);
