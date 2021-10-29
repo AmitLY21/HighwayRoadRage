@@ -2,6 +2,7 @@ package com.example.highwayroadrage;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
@@ -9,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -23,7 +25,7 @@ public class GameActivity extends AppCompatActivity {
     private Button btnLeft;
     private Button btnRight;
 
-    ArrayList<ArrayList<ImageView>> obstaclesList = new ArrayList<>();
+    private ArrayList<ArrayList<ImageView>> obstaclesList = new ArrayList<>();
     private ArrayList<ImageView> leftColumnObstacles = new ArrayList<>();
     private ArrayList<ImageView> middleColumnObstacles = new ArrayList<>();
     private ArrayList<ImageView> rightColumnObstacles = new ArrayList<>();
@@ -36,9 +38,10 @@ public class GameActivity extends AppCompatActivity {
     private ArrayList<ImageView> playerRow = new ArrayList<>();
 
     private TextView lblScore;
-    private int clockCounter = 0;
+    int score = 0;
 
     final int DELAY = 1000; // 1000 milliseconds == 1 second
+    private int clockCounter = 0;
     final Handler handler = new Handler();
 
     /**
@@ -49,13 +52,19 @@ public class GameActivity extends AppCompatActivity {
         public void run() {
             handler.postDelayed(this, DELAY);
             moveObstacles();
-            if (clockCounter % 2 == 0) {
+            if (clockCounter % 2 == 1) {
                 generateObstacle();
             }
             clockCounter++;
             checkCollision();
+
+            if (player.getLives() == -1) {
+                player.setLives(2);
+                restoreLives();
+            }
         }
     };
+
 
     /**
      * Hide the status and navigation bar at the top of the screen!
@@ -73,7 +82,6 @@ public class GameActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,8 +91,8 @@ public class GameActivity extends AppCompatActivity {
         findViews();
         findObstaclesView();
         player = new Player(playerRow);
-        // Get instance of Vibrator from current Context
-        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        MediaPlayer ring = MediaPlayer.create(GameActivity.this, R.raw.get_low);
+        ring.start();
 
         btnRight.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -99,8 +107,6 @@ public class GameActivity extends AppCompatActivity {
             public void onClick(View view) {
                 rotateWheel(-45);
                 moveLeft();
-                // Vibrate for 400 milliseconds
-                v.vibrate(400);
             }
         });
     }
@@ -129,14 +135,10 @@ public class GameActivity extends AppCompatActivity {
      * Set every obstacle visibility to false - invisible
      */
     private void setObstaclesInvisible() {
-        for (int i = 0; i < rightColumnObstacles.size(); i++) {
-            rightColumnObstacles.get(i).setVisibility(View.INVISIBLE);
-        }
-        for (int i = 0; i < middleColumnObstacles.size(); i++) {
-            middleColumnObstacles.get(i).setVisibility(View.INVISIBLE);
-        }
-        for (int i = 0; i < leftColumnObstacles.size(); i++) {
-            leftColumnObstacles.get(i).setVisibility(View.INVISIBLE);
+        for (ArrayList<ImageView> list : obstaclesList) {
+            for (ImageView v : list) {
+                v.setVisibility(View.INVISIBLE);
+            }
         }
     }
 
@@ -191,7 +193,7 @@ public class GameActivity extends AppCompatActivity {
         obstaclesList.get(columnNumber).get(0).setVisibility(View.VISIBLE);
     }
 
-    //TODO work it out , solve the bug
+    //TODO Improve movement
     private void moveObstacles() {
         int lastPosition;
         for (ArrayList<ImageView> list : obstaclesList) {
@@ -199,41 +201,68 @@ public class GameActivity extends AppCompatActivity {
                 if (v.getVisibility() == View.VISIBLE) {
                     lastPosition = list.indexOf(v);
                     switchObstaclePosition(lastPosition, obstaclesList.indexOf(list));
+                    break;
                 }
             }
         }
     }
 
-    //TODO work it out , solve the bug
+    //improve
     private void switchObstaclePosition(int lastPosition, int columnNumber) {
-        if (lastPosition+1 < obstaclesList.get(0).size() ){
+        if (lastPosition + 1 < obstaclesList.get(0).size()) {
             obstaclesList.get(columnNumber).get(lastPosition).setVisibility(View.INVISIBLE);
-            obstaclesList.get(columnNumber).get(lastPosition+1).setVisibility(View.VISIBLE);
+            obstaclesList.get(columnNumber).get(lastPosition + 1).setVisibility(View.VISIBLE);
         }
     }
 
     //TODO make it shorter and add a toast and update heart function
     private void checkCollision() {
+        if (leftColumnObstacles.get(4).getVisibility() == View.VISIBLE && playerRow.get(0).getVisibility() == View.VISIBLE) {
+            collisionAction();
+        }
+        if (middleColumnObstacles.get(4).getVisibility() == View.VISIBLE && playerRow.get(1).getVisibility() == View.VISIBLE) {
+            collisionAction();
+        }
+        if (rightColumnObstacles.get(4).getVisibility() == View.VISIBLE && playerRow.get(2).getVisibility() == View.VISIBLE) {
+            collisionAction();
+        }
+        removeObstacles();
+
+
+    }
+
+    /**
+     * remove the obstacles that are in the finish line
+     */
+    private void removeObstacles() {
+        for (int i = 0; i < 3; i++) {
+            if (obstaclesList.get(i).get(4).getVisibility() == View.VISIBLE) {
+                obstaclesList.get(i).get(4).setVisibility(View.INVISIBLE);
+                score++;
+                lblScore.setText("" + score);
+            }
+        }
+    }
+
+    private void collisionAction() {
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        if (leftColumnObstacles.get(leftColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
-                playerRow.get(0).getVisibility() == View.VISIBLE) {
-            player.setLives(player.getLives() - 1);
-            // Vibrate for 400 milliseconds
-            // Get instance of Vibrator from current Context
-            v.vibrate(400);
+        // Vibrate for 400 milliseconds
+        v.vibrate(400);
+        Toast.makeText(this, "-1 Lives", Toast.LENGTH_SHORT).show();
+        removeHearts();
+    }
+
+
+    private void restoreLives() {
+        for (ImageView view : hearts) {
+            view.setVisibility(View.VISIBLE);
         }
-        if (middleColumnObstacles.get(middleColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
-                playerRow.get(1).getVisibility() == View.VISIBLE) {
-            player.setLives(player.getLives() - 1);
-            // Vibrate for 400 milliseconds
-            v.vibrate(400);
-        }
-        if (rightColumnObstacles.get(rightColumnObstacles.size() - 1).getVisibility() == View.VISIBLE &&
-                playerRow.get(2).getVisibility() == View.VISIBLE) {
-            player.setLives(player.getLives() - 1);
-            // Vibrate for 400 milliseconds
-            v.vibrate(400);
-        }
+    }
+
+    private void removeHearts() {
+        int currentLives = player.getLives();
+        hearts.get(currentLives).setVisibility(View.INVISIBLE);
+        player.setLives(currentLives - 1);
     }
 
     /**
@@ -247,17 +276,22 @@ public class GameActivity extends AppCompatActivity {
         leftColumnObstacles.add(3, findViewById(R.id.panel_IMG_hole41));
         leftColumnObstacles.add(4, findViewById(R.id.panel_IMG_hole51));
 
+        //leftColumnObstacles.add(5, findViewById(R.id.panel_IMG_car0));
+
         middleColumnObstacles.add(0, findViewById(R.id.panel_IMG_barrier12));
         middleColumnObstacles.add(1, findViewById(R.id.panel_IMG_barrier22));
         middleColumnObstacles.add(2, findViewById(R.id.panel_IMG_barrier32));
         middleColumnObstacles.add(3, findViewById(R.id.panel_IMG_barrier42));
         middleColumnObstacles.add(4, findViewById(R.id.panel_IMG_barrier52));
+        //middleColumnObstacles.add(5, findViewById(R.id.panel_IMG_car1));
+
 
         rightColumnObstacles.add(0, findViewById(R.id.panel_IMG_hole13));
         rightColumnObstacles.add(1, findViewById(R.id.panel_IMG_hole23));
         rightColumnObstacles.add(2, findViewById(R.id.panel_IMG_hole33));
         rightColumnObstacles.add(3, findViewById(R.id.panel_IMG_hole43));
         rightColumnObstacles.add(4, findViewById(R.id.panel_IMG_hole53));
+        //rightColumnObstacles.add(5, findViewById(R.id.panel_IMG_car2));
 
         obstaclesList.add(0, leftColumnObstacles);
         obstaclesList.add(1, middleColumnObstacles);
@@ -273,16 +307,18 @@ public class GameActivity extends AppCompatActivity {
         wheel = findViewById(R.id.panel_IMG_wheel);
 
         imgHeart1 = findViewById(R.id.panel_IMG_heart1);
-        imgHeart2 = findViewById(R.id.panel_IMG_heart1);
-        imgHeart3 = findViewById(R.id.panel_IMG_heart1);
+        imgHeart2 = findViewById(R.id.panel_IMG_heart2);
+        imgHeart3 = findViewById(R.id.panel_IMG_heart3);
 
-        hearts.add(imgHeart1);
-        hearts.add(imgHeart2);
-        hearts.add(imgHeart3);
+        hearts.add(0, imgHeart1);
+        hearts.add(1, imgHeart2);
+        hearts.add(2, imgHeart3);
 
         playerRow.add(findViewById(R.id.panel_IMG_car0));
         playerRow.add(findViewById(R.id.panel_IMG_car1));
         playerRow.add(findViewById(R.id.panel_IMG_car2));
+
+        lblScore = findViewById(R.id.panel_LBL_score);
 
     }
 }

@@ -12,7 +12,7 @@ public class Player {
     private ArrayList<ImageView> carRow;
 
     public Player(ArrayList<ImageView> playerRow) {
-        this.lives = 3;
+        this.lives = 2;
         this.currentPosition = 1;
         carRow = playerRow;
     }
