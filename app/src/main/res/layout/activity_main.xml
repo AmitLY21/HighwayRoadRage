@@ -369,9 +369,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="15dp"
-                    android:visibility="invisible"
                     android:layout_weight="1"
-                    android:src="@drawable/car">
+                    android:src="@drawable/car"
+                    android:visibility="invisible">
 
                 </ImageView>
             </LinearLayout>
@@ -388,8 +388,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="15dp"
-                    android:visibility="visible"
-                    android:src="@drawable/car">
+                    android:src="@drawable/car"
+                    android:visibility="visible">
 
                 </ImageView>
 
@@ -408,9 +408,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="15dp"
-                    android:visibility="invisible"
                     android:layout_weight="1"
-                    android:src="@drawable/car">
+                    android:src="@drawable/car"
+                    android:visibility="invisible">
 
                 </ImageView>
             </LinearLayout>
@@ -423,14 +423,13 @@
             android:layout_height="match_parent"
             android:layout_below="@id/panel_Layout_Car_Row">
 
-            <Button
+            <ImageButton
                 android:id="@+id/panel_BTN_left"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
-                android:text="Left"
-                android:textSize="20sp" />
+                android:src="@drawable/arrow_left" />
 
             <ImageView
                 android:id="@+id/panel_IMG_wheel"
@@ -441,14 +440,13 @@
                 android:background="@android:color/transparent"
                 android:src="@drawable/wheel" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/panel_BTN_right"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@android:color/transparent"
-                android:text="Right"
-                android:textSize="20sp" />
+                android:src="@drawable/arrow_right" />
         </LinearLayout>
 
     </RelativeLayout>
